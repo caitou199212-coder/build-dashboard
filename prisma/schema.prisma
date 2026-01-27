@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String   // 密码(hash)
+  role      String   @default("member") // admin, member
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联的广告账户（用户可见的广告账户 - 数据权限控制）
+  adAccounts UserAccount[]
+
+  @@map("users")
+}
+
+// 广告账户表
+model AdAccount {
+  id          String   @id @default(cuid())
+  platform    String   // google-ads, facebook-ads, tiktok-ads, etc.
+  accountId   String   // 平台账户ID
+  accountName String
+  currency    String?  // 货币
+  status      String   @default("active") // active, inactive, suspended
+  config      String?  @db.Text // JSON格式存储API配置信息（使用TEXT类型支持长Token）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联的用户（有权限访问此账户的用户）
+  users   UserAccount[]
+  // 广告活动
+  campaigns Campaign[]
+  // 同步任务记录
+  syncTasks SyncTask[]
+
+  @@unique([platform, accountId])
+  @@map("ad_accounts")
+}
+
+// 用户-广告账户关联表（数据权限控制）
+model UserAccount {
+  id          String   @id @default(cuid())
+  userId      String
+  accountId   String
+  permissions String   @default("view") // view, edit, admin
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adAccount AdAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accountId])
+  @@map("user_accounts")
+}
+
+// 广告活动表
+model Campaign {
+  id           String   @id @default(cuid())
+  accountId    String
+  campaignId   String   // 平台活动ID
+  campaignName String
+  status       String   // active, paused, removed
+  budget       Float?
+  budgetType   String?  // daily, lifetime
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  account AdAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, campaignId])
+  @@map("campaigns")
+}
+
+// 广告订单数据表（存储广告订单记录）
+model AdOrder {
+  id              String   @id @default(cuid())
+  platform        String   // 平台: ba, ads, ec, lb, rw, pm, lh, cg, foso, lv, bv
+  orderId         String   // 订单ID
+  account         String?  // 账号标识（用于区分同一平台的不同账号）
+  merchantName    String   // 商家名称
+  merchantId      String   // 商家ID
+  orderAmount     Float    // 订单金额
+  commissionAmount Float   // 佣金金额
+  status          String   // 状态
+  conversionTime  DateTime // 转化时间
+  orderUpdateTime DateTime // 订单变动时间
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([platform, orderId, account])
+  @@index([platform])
+  @@index([account])
+  @@index([conversionTime])
+  @@index([orderUpdateTime])
+  @@map("ad_orders")
+}
+
+// 同步任务记录表
+model SyncTask {
+  id          String   @id @default(cuid())
+  accountId   String
+  taskType    String   // full, daily, hourly
+  status      String   // pending, running, completed, failed
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  recordsSynced Int    @default(0)
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account AdAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("sync_tasks")
+}
