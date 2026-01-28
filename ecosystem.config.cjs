@@ -24,6 +24,7 @@ module.exports = {
         // connection_limit: 最大连接数（默认 10，建议 20-50）
         // pool_timeout: 连接超时时间（秒）
         // connect_timeout: 建立连接超时（秒）
+        JWT_SECRET: '2ca0e369f42672d2acad96664be85c54436d37d6934b9d84b35cf7938c2b7de3',
         DATABASE_URL: 'mysql://dashboard_admin:Admin%5B%2A%5D%25119335%25@103.218.241.134:3306/ads_dashboard?connection_limit=30&pool_timeout=20&connect_timeout=10',
       },
       env_production: {
