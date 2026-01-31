@@ -7,11 +7,12 @@ import { db } from '@/lib/db'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const account = await db.adAccount.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!account) {
@@ -51,15 +52,16 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { accountName, currency, status, config } = body
 
     // 检查账户是否存在
     const existing = await db.adAccount.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existing) {
@@ -71,7 +73,7 @@ export async function PUT(
 
     // 更新账户
     const account = await db.adAccount.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         accountName: accountName || existing.accountName,
         currency: currency || existing.currency,
@@ -100,12 +102,13 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     // 检查账户是否存在
     const existing = await db.adAccount.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existing) {
@@ -117,7 +120,7 @@ export async function DELETE(
 
     // 删除账户
     await db.adAccount.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({
