@@ -5,10 +5,10 @@ import { jwtVerify } from 'jose'
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // 不需要鉴权的路径
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/me']
+const PUBLIC_PATHS = ['/', '/login', '/api/v1/auth/login', '/api/v1/auth/logout', '/api/v1/auth/me']
 
 // API 路径（需要特殊处理）
-const API_PATHS = ['/api']
+const API_PATHS = ['/v1/api']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
